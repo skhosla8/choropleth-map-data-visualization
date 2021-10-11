@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <script src="https://d3js.org/d3.v7.min.js" charset="UTF-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+    <title>United States Educational Attainment</title>
+</head>
+
+<body>
+    <div id="main">
+        <div id="title" class="svg-container"></div>
+        <div id="description" class="svg-container"></div>
+        <div id="choropleth-map" class="svg-container"></div>
+    </div>
+
+    <script>
+        const margin = {
+            top: 80,
+            right: 80,
+            bottom: 80,
+            left: 80,
+        },
+            width = 960,
+            height = 600;
+
+        const countyUrl = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
+        const educationUrl = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
+
+        const tooltip = d3
+            .select('body')
+            .append('div')
+            .attr('id', 'tooltip')
+            .style('opacity', 0)
+            .style('position', 'absolute');
+
+        const title = d3
+            .select('#title')
+            .append('svg')
+            .attr('viewBox', `0 0 ${width} 70`)
+            .attr('preserveAspectRatio', 'xMidYMid');
+
+        const description = d3
+            .select('#description')
+            .append('svg')
+            .attr('viewBox', `0 0 ${width} 40`)
+            .attr('preserveAspectRatio', 'xMidYMid');
+
+        const map = d3
+            .select('#choropleth-map')
+            .append('svg')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .attr('preserveAspectRatio', 'xMidYMid');
+
+        Promise.all([d3.json(countyUrl), (d3.json(educationUrl))])
+            .then((data) => {
+                const countyData = topojson.feature(data[0], data[0].objects.counties).features;
+                const educationData = data[1];
+
+                title
+                    .append('text')
+                    .attr('id', 'title')
+                    .attr('x', width / 2)
+                    .attr('y', 53)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '3.5rem')
+                    .style('font-weight', 600)
+                    .text('United States Education Attainment');
+
+                description
+                    .append('text')
+                    .attr('id', 'description')
+                    .attr('x', width / 2)
+                    .attr('y', 22)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '1.2rem')
+                    .style('font-weight', 400)
+                    .text('Percentage of adults age 25 and older with a bachelor\'s degree or higher (2010-2014)');
+
+                const xScale = d3
+                    .scaleLinear()
+                    .domain([3, 66])
+                    .rangeRound([600, 860]);
+
+                const color = d3
+                    .scaleThreshold()
+                    .domain([3, 12, 21, 30, 39, 48, 57, 66])
+                    .range(['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58']);
+
+                const legend = map
+                    .append('g')
+                    .attr('id', 'legend')
+                    .attr('transform', 'translate(0, 40)');
+
+                legend.selectAll('rect')
+                    .data(color.range().map(function (d) {
+                        d = color.invertExtent(d);
+
+                        if (d[0] == null) {
+                            d[0] = xScale.domain()[0];
+                        }
+
+                        if (d[1] == null) {
+                            d[1] = xScale.domain()[1];
+                        }
+
+                        return d;
+                    }))
+                    .enter()
+                    .append('rect')
+                    .attr('width', (d) => xScale(d[1]) - xScale(d[0]))
+                    .attr('height', 10)
+                    .attr('x', (d) => xScale(d[0]))
+                    .style('fill', (d) => color(d[0]));
+
+                legend
+                    .append('text')
+                    .attr('x', xScale.range()[0])
+                    .attr('y', -7)
+                    .attr('text-anchor', 'start')
+                    .style('fill', '#000')
+                    .style('font-weight', 600)
+                    .text('Attainment Rate');
+
+                legend
+                    .call(d3.axisBottom(xScale)
+                        .tickSize(13)
+                        .tickFormat((d, i) => i ? Math.round(d) : Math.round(d) + '%')
+                        .tickValues(color.domain()))
+                    .select('.domain')
+                    .remove();
+
+                map.selectAll('path')
+                    .data(countyData)
+                    .enter()
+                    .append('path')
+                    .attr('d', d3.geoPath())
+                    .attr('class', 'county')
+                    .attr('data-fips', (d) => d.id)
+                    .attr('data-education', (d) => {
+                        const county = educationData.find(item => item.fips === d.id);
+
+                        return county.bachelorsOrHigher;
+                    })
+                    .style('fill', (d) => {
+                        const id = d.id;
+                        const county = educationData.find(item => item.fips === id);
+                        const percentage = county.bachelorsOrHigher;
+
+                        if (percentage <= 3) {
+                            return '#ffffd9';
+                        } else if (percentage <= 12) {
+                            return '#edf8b1';
+                        } else if (percentage <= 21) {
+                            return '#c7e9b4';
+                        } else if (percentage <= 30) {
+                            return '#7fcdbb';
+                        } else if (percentage <= 39) {
+                            return '#41b6c4';
+                        } else if (percentage <= 48) {
+                            return '#1d91c0';
+                        } else if (percentage <= 57) {
+                            return '#225ea8';
+                        } else if (percentage <= 66) {
+                            return '#253494';
+                        } else {
+                            return '#081d58';
+                        }
+                    })
+                    .on('mouseover', function (event, d) {
+                        const county = educationData.find(item => item.fips === d.id);
+
+                        tooltip
+                            .style('opacity', 0.9)
+                            .attr('data-education', county.bachelorsOrHigher)
+                            .html(
+                                `${county.area_name}, ${county.state}: <b>${county.bachelorsOrHigher}%</b>`
+                            )
+                            .style('left', event.pageX + 10 + 'px')
+                            .style('top', event.pageY + 'px');
+                    })
+                    .on('mouseout', function (event, d) {
+                        tooltip
+                            .style('opacity', 0);
+                    });
+
+                map
+                    .append('path')
+                    .datum(
+                        topojson.mesh(data[0], data[0].objects.states, function (a, b) {
+                            return a !== b;
+                        }))
+                    .attr('d', d3.geoPath())
+                    .style('fill', 'none')
+                    .style('stroke', '#fff')
+                    .style('stroke-linejoin', 'round');
+            })
+            .catch((error) => console.log(error));
+    </script>
+</body>
+
+</html>
