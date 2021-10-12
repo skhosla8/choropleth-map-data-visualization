@@ -5,17 +5,15 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="indexDraft.css">
     <script src="https://d3js.org/d3.v7.min.js" charset="UTF-8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
     <title>United States Educational Attainment</title>
 </head>
 
 <body>
-    <div id="main">
-        <div id="title" class="svg-container"></div>
-        <div id="description" class="svg-container"></div>
-        <div id="choropleth-map" class="svg-container"></div>
+    <div id="choropleth-map">
+        <div id="svg-container"></div>
     </div>
 
     <script>
@@ -39,19 +37,19 @@
             .style('position', 'absolute');
 
         const title = d3
-            .select('#title')
+            .select('#svg-container')
             .append('svg')
             .attr('viewBox', `0 0 ${width} 70`)
             .attr('preserveAspectRatio', 'xMidYMid');
 
         const description = d3
-            .select('#description')
+            .select('#svg-container')
             .append('svg')
             .attr('viewBox', `0 0 ${width} 40`)
             .attr('preserveAspectRatio', 'xMidYMid');
 
         const map = d3
-            .select('#choropleth-map')
+            .select('#svg-container')
             .append('svg')
             .attr('viewBox', `0 0 ${width} ${height}`)
             .attr('preserveAspectRatio', 'xMidYMid');
@@ -75,9 +73,9 @@
                     .append('text')
                     .attr('id', 'description')
                     .attr('x', width / 2)
-                    .attr('y', 22)
+                    .attr('y', 26.5)
                     .attr('text-anchor', 'middle')
-                    .style('font-size', '1.2rem')
+                    .style('font-size', '1.3rem')
                     .style('font-weight', 400)
                     .text('Percentage of adults age 25 and older with a bachelor\'s degree or higher (2010-2014)');
 
